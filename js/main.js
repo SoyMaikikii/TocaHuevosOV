@@ -195,7 +195,7 @@ async function handlePokemonCommand(index, rawMessage) {
   if (!identifier) return;
 
   // Marcar como muerto
-  if (['d', 'dead', 'muerto'].includes(identifier)) {
+  if (['d', 'dead', 'muerto', 'm'].includes(identifier)) {
     if (team[index]) {
       team[index].dead = true;
       saveState();
@@ -205,7 +205,7 @@ async function handlePokemonCommand(index, rawMessage) {
   }
 
   // Revivir
-  if (['alive', 'revive', 'vivo'].includes(identifier)) {
+  if (['alive', 'revive', 'vivo', 'v'].includes(identifier)) {
     if (team[index]) {
       team[index].dead = false;
       saveState();
@@ -443,3 +443,4 @@ function showError(message) {
   errorBox.classList.remove('hidden');
 
 }
+
