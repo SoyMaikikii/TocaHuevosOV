@@ -1,13 +1,22 @@
 const SLOT_COUNT = 6;
 const DEFAULT_COMMAND_PREFIX = 'poke';
 const DEFAULT_DEATH_COMMAND = 'muertes';
-const BLANK_IMAGE = './img/MainBlank.png';
+
+const EMPTY_IMAGE = './img/egg.png';
+const EMPTY_LABEL = 'HUEVO';
+
+const CLEAR_COMMANDS = ['pokel', 'pokelimpiar'];
+
 const ALIVE_EMOTIONS = ['Joyous', 'Happy', 'Normal'];
 const DEAD_EMOTIONS = ['Dizzy', 'Crying', 'Normal'];
 
 const portraitExistsCache = new Map();
 const portraitChoiceCache = new Map();
 
+const PMD_BASE_URL = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait';
+
+const SHINY_FLAG_TOKENS = new Set(['-shiny', 'shiny']);
+const MEGA_FLAG_TOKENS = new Set(['-mega', 'mega']);
 
 let canal = '';
 let commandPrefix = DEFAULT_COMMAND_PREFIX;
@@ -50,11 +59,11 @@ function buildSlots() {
     slot.innerHTML = `
       <img
         id="pk${i + 1}"
-        class="portrait"
-        src="${BLANK_IMAGE}"
+        class="portrait egg"
+        src="${EMPTY_IMAGE}"
         alt="Pokémon ${i + 1}"
       />
-      <div id="nick${i + 1}" class="nick"></div>
+      <div id="nick${i + 1}" class="nick">${EMPTY_LABEL}</div>
     `;
     teamContainer.appendChild(slot);
   }
@@ -72,6 +81,11 @@ function connectToChat() {
 
     if (!flags?.broadcaster && !flags?.mod) return;
     if (channelFromEvent !== canal) return;
+
+    if (isClearCommand(normalizedCommand)) {
+      handleClearCommand(message);
+      return;
+    }
 
     const slotIndex = getCommands().indexOf(normalizedCommand);
 
@@ -93,6 +107,77 @@ function getCommands() {
   return Array.from({ length: SLOT_COUNT }, (_, i) => `${commandPrefix}${i + 1}`);
 }
 
+function parsePokemonMessage(rawMessage) {
+  const parts = (rawMessage || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const identifier = (parts.shift() || '').toLowerCase();
+
+  const flags = {
+    shiny: false,
+    mega: false
+  };
+
+  const nicknameParts = [];
+
+  for (const part of parts) {
+    const normalized = part.toLowerCase();
+
+    if (SHINY_FLAG_TOKENS.has(normalized)) {
+      flags.shiny = true;
+      continue;
+    }
+
+    if (MEGA_FLAG_TOKENS.has(normalized)) {
+      flags.mega = true;
+      continue;
+    }
+
+    nicknameParts.push(part);
+  }
+
+  return {
+    identifier,
+    nickname: nicknameParts.join(' ').trim(),
+    flags
+  };
+}
+
+function isClearCommand(command) {
+  return CLEAR_COMMANDS.includes(command);
+}
+
+function handleClearCommand(rawMessage) {
+  const message = (rawMessage || '').trim();
+
+  // !pokel  -> limpia todo
+  if (!message) {
+    team = Array.from({ length: SLOT_COUNT }, () => null);
+    saveState();
+    renderAll();
+    return;
+  }
+
+  // !pokel 1 3 5
+  const indexes = [...new Set(
+    message
+      .split(/[\s,]+/)
+      .map(value => parseInt(value, 10))
+      .filter(value => !Number.isNaN(value) && value >= 1 && value <= SLOT_COUNT)
+  )];
+
+  if (indexes.length === 0) return;
+
+  for (const slotNumber of indexes) {
+    clearSlot(slotNumber - 1);
+  }
+
+  saveState();
+  renderAll();
+}
+
 async function handlePokemonCommand(index, rawMessage) {
   const message = (rawMessage || '').trim();
 
@@ -105,15 +190,11 @@ async function handlePokemonCommand(index, rawMessage) {
     return;
   }
 
-  const parts = message.split(/\s+/);
-  const identifier = (parts.shift() || '').toLowerCase();
-  const nickname = parts.join(' ').trim();
+  const { identifier, nickname, flags } = parsePokemonMessage(message);
+
+  if (!identifier) return;
 
   // Marcar como muerto
-  // Ejemplos:
-  // !poke2 d
-  // !poke2 dead
-  // !poke2 muerto
   if (['d', 'dead', 'muerto'].includes(identifier)) {
     if (team[index]) {
       team[index].dead = true;
@@ -123,9 +204,7 @@ async function handlePokemonCommand(index, rawMessage) {
     return;
   }
 
-  // Revivir si ya existe y quieres quitar gris:
-  // !poke2 alive
-  // !poke2 revive
+  // Revivir
   if (['alive', 'revive', 'vivo'].includes(identifier)) {
     if (team[index]) {
       team[index].dead = false;
@@ -135,10 +214,10 @@ async function handlePokemonCommand(index, rawMessage) {
     return;
   }
 
-  await setPokemon(index, identifier, nickname);
+  await setPokemon(index, identifier, nickname, flags);
 }
 
-async function setPokemon(index, identifier, nickname) {
+async function setPokemon(index, identifier, nickname, flags = {}) {
   try {
     const pokemon = await fetchPokemon(identifier);
 
@@ -151,8 +230,8 @@ async function setPokemon(index, identifier, nickname) {
     const species = pokemon.species?.name || identifier;
     const displayName = nickname || formatDisplayName(species);
 
-    const spriteAlive = await resolvePortraitByPriority(numero, ALIVE_EMOTIONS);
-    const spriteDead = await resolvePortraitByPriority(numero, DEAD_EMOTIONS);
+    const spriteAlive = await resolvePortraitByPriority(numero, ALIVE_EMOTIONS, flags);
+    const spriteDead = await resolvePortraitByPriority(numero, DEAD_EMOTIONS, flags);
 
     team[index] = {
       poke: identifier,
@@ -160,7 +239,11 @@ async function setPokemon(index, identifier, nickname) {
       nick: displayName,
       numero,
       dead: false,
-      sprite: spriteAlive,      // compatibilidad con datos viejos
+
+      shiny: !!flags.shiny,
+      mega: !!flags.mega,
+
+      sprite: spriteAlive,
       spriteAlive,
       spriteDead
     };
@@ -225,15 +308,16 @@ async function imageExists(url) {
   return existsPromise;
 }
 
-async function resolvePortraitByPriority(numero, emotions) {
-  const cacheKey = `${numero}|${emotions.join(',')}`;
+async function resolvePortraitByPriority(numero, emotions, flags = {}) {
+  const variantKey = buildVariantPath(flags) || 'base';
+  const cacheKey = `${numero}|${variantKey}|${emotions.join(',')}`;
 
   if (portraitChoiceCache.has(cacheKey)) {
     return portraitChoiceCache.get(cacheKey);
   }
 
   for (const emotion of emotions) {
-    const url = buildPMDSpriteUrl(numero, emotion);
+    const url = buildPMDSpriteUrl(numero, emotion, flags);
     const exists = await imageExists(url);
 
     if (exists) {
@@ -242,13 +326,30 @@ async function resolvePortraitByPriority(numero, emotions) {
     }
   }
 
-  const fallback = buildPMDSpriteUrl(numero, 'Normal');
+  const fallback = buildPMDSpriteUrl(numero, 'Normal', flags);
   portraitChoiceCache.set(cacheKey, fallback);
   return fallback;
 }
 
-function buildPMDSpriteUrl(numero, emotion = 'Normal') {
-  return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait/${numero}/${emotion}.png`;
+function buildVariantPath(flags = {}) {
+  const shiny = !!flags.shiny;
+  const mega = !!flags.mega;
+
+  if (mega && shiny) return '0001/0001';
+  if (mega) return '0001';
+  if (shiny) return '0000/0001';
+
+  return '';
+}
+
+function buildPMDSpriteUrl(numero, emotion = 'Normal', flags = {}) {
+  const variantPath = buildVariantPath(flags);
+
+  if (variantPath) {
+    return `${PMD_BASE_URL}/${numero}/${variantPath}/${emotion}.png`;
+  }
+
+  return `${PMD_BASE_URL}/${numero}/${emotion}.png`;
 }
 
 function renderAll() {
@@ -266,18 +367,20 @@ function renderSlot(index) {
   if (!img || !nick) return;
 
   if (!slot) {
-    img.src = BLANK_IMAGE;
+    img.src = EMPTY_IMAGE;
     img.classList.remove('dead');
-    nick.textContent = '';
+    img.classList.add('egg');
+    nick.textContent = EMPTY_LABEL;
     return;
   }
 
-  const aliveSprite = slot.spriteAlive || slot.sprite || BLANK_IMAGE;
+  const aliveSprite = slot.spriteAlive || slot.sprite || EMPTY_IMAGE;
   const deadSprite = slot.spriteDead || aliveSprite;
   const currentSprite = slot.dead ? deadSprite : aliveSprite;
 
   img.src = currentSprite;
   img.classList.toggle('dead', !!slot.dead);
+  img.classList.remove('egg');
   nick.textContent = slot.nick || '';
 }
 
