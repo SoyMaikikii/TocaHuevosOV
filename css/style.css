@@ -1,0 +1,128 @@
+@font-face {
+  font-family: 'BebasCustom';
+  src: url('../fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --canvas-width: 1920px;
+  --canvas-height: 1080px;
+
+  /* Ajusta estas posiciones a tu overlay */
+  --team-left: 134px;
+  --team-top: 812px;
+  --team-gap: 44px;
+
+  --slot-width: 137px;
+  --slot-height: 125px;
+
+  --nick-font-size: 26px;
+
+  --death-top: 726px;
+  --death-right: 674px;
+  --death-font-size: 30px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  overflow: hidden;
+  background: transparent;
+  font-family: 'BebasCustom', Arial, sans-serif;
+}
+
+.overlay {
+  position: relative;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  background: transparent;
+}
+
+.team {
+  position: absolute;
+  top: var(--team-top);
+  left: var(--team-left);
+  display: flex;
+  gap: var(--team-gap);
+}
+
+.slot {
+  width: var(--slot-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.portrait {
+  width: var(--slot-width);
+  height: var(--slot-height);
+  object-fit: contain;
+  display: block;
+  image-rendering: auto;
+}
+
+.portrait.dead {
+  filter: grayscale(100%);
+  opacity: 0.9;
+}
+
+.nick {
+  width: 100%;
+  margin-top: 2px;
+  color: white;
+  font-size: var(--nick-font-size);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 0 2px rgba(0, 0, 0, 1);
+}
+
+.death-box {
+  position: absolute;
+  top: var(--death-top);
+  right: var(--death-right);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 0 2px rgba(0, 0, 0, 1);
+}
+
+.death-label,
+.death-value {
+  font-size: var(--death-font-size);
+  line-height: 1;
+}
+
+.error-box {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  max-width: 900px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(120, 0, 0, 0.9);
+  color: white;
+  font-size: 24px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hidden {
+  display: none;
+}
