@@ -16,12 +16,11 @@
 
   --slot-width: 137px;
   --slot-height: 125px;
+  --slot-scale: 1.13;
 
-  --nick-font-size: 26px;
+  --nick-font-size: 23px;
 
-  --death-top: 726px;
-  --death-right: 674px;
-  --death-font-size: 30px;
+  --egg-scale: 1.0;
 }
 
 * {
@@ -59,6 +58,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  transform: scale(var(--slot-scale));
+  transform-origin: center center;
 }
 
 .portrait {
@@ -69,6 +70,11 @@ body {
   image-rendering: auto;
 }
 
+.portrait.egg {
+  transform: scale(var(--egg-scale));
+  transform-origin: center center;
+}
+
 .portrait.dead {
   filter: grayscale(100%);
   opacity: 0.9;
@@ -76,7 +82,7 @@ body {
 
 .nick {
   width: 100%;
-  margin-top: 2px;
+  margin-top: 3px;
   color: white;
   font-size: var(--nick-font-size);
   line-height: 1;
