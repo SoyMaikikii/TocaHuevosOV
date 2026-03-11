@@ -2,6 +2,12 @@ const SLOT_COUNT = 6;
 const DEFAULT_COMMAND_PREFIX = 'poke';
 const DEFAULT_DEATH_COMMAND = 'muertes';
 const BLANK_IMAGE = './img/MainBlank.png';
+const ALIVE_EMOTIONS = ['Joyous', 'Happy', 'Normal'];
+const DEAD_EMOTIONS = ['Dizzy', 'Crying', 'Normal'];
+
+const portraitExistsCache = new Map();
+const portraitChoiceCache = new Map();
+
 
 let canal = '';
 let commandPrefix = DEFAULT_COMMAND_PREFIX;
@@ -144,15 +150,19 @@ async function setPokemon(index, identifier, nickname) {
     const numero = String(pokemon.id).padStart(4, '0');
     const species = pokemon.species?.name || identifier;
     const displayName = nickname || formatDisplayName(species);
-    const spriteUrl = buildPMDSpriteUrl(numero);
+
+    const spriteAlive = await resolvePortraitByPriority(numero, ALIVE_EMOTIONS);
+    const spriteDead = await resolvePortraitByPriority(numero, DEAD_EMOTIONS);
 
     team[index] = {
       poke: identifier,
-      sprite: spriteUrl,
       name: species,
       nick: displayName,
       numero,
-      dead: false
+      dead: false,
+      sprite: spriteAlive,      // compatibilidad con datos viejos
+      spriteAlive,
+      spriteDead
     };
 
     saveState();
@@ -197,8 +207,48 @@ async function fetchPokemon(identifier) {
   return response.json();
 }
 
-function buildPMDSpriteUrl(numero) {
-  return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait/${numero}/Normal.png`;
+async function imageExists(url) {
+  if (portraitExistsCache.has(url)) {
+    return portraitExistsCache.get(url);
+  }
+
+  const existsPromise = new Promise((resolve) => {
+    const img = new Image();
+
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+
+    img.src = url;
+  });
+
+  portraitExistsCache.set(url, existsPromise);
+  return existsPromise;
+}
+
+async function resolvePortraitByPriority(numero, emotions) {
+  const cacheKey = `${numero}|${emotions.join(',')}`;
+
+  if (portraitChoiceCache.has(cacheKey)) {
+    return portraitChoiceCache.get(cacheKey);
+  }
+
+  for (const emotion of emotions) {
+    const url = buildPMDSpriteUrl(numero, emotion);
+    const exists = await imageExists(url);
+
+    if (exists) {
+      portraitChoiceCache.set(cacheKey, url);
+      return url;
+    }
+  }
+
+  const fallback = buildPMDSpriteUrl(numero, 'Normal');
+  portraitChoiceCache.set(cacheKey, fallback);
+  return fallback;
+}
+
+function buildPMDSpriteUrl(numero, emotion = 'Normal') {
+  return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait/${numero}/${emotion}.png`;
 }
 
 function renderAll() {
@@ -222,7 +272,11 @@ function renderSlot(index) {
     return;
   }
 
-  img.src = slot.sprite || BLANK_IMAGE;
+  const aliveSprite = slot.spriteAlive || slot.sprite || BLANK_IMAGE;
+  const deadSprite = slot.spriteDead || aliveSprite;
+  const currentSprite = slot.dead ? deadSprite : aliveSprite;
+
+  img.src = currentSprite;
   img.classList.toggle('dead', !!slot.dead);
   nick.textContent = slot.nick || '';
 }
@@ -284,4 +338,5 @@ function showError(message) {
 
   errorBox.textContent = message;
   errorBox.classList.remove('hidden');
+
 }
