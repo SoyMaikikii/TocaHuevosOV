@@ -88,7 +88,7 @@ body.game-switch {
 
 .portrait.dead {
   filter: grayscale(100%);
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .nick {
@@ -241,17 +241,17 @@ body.game-switch .slot-10 { left: 956px; top: 963px; }
 }
 
 /* Posición de TEXTOS */
-body.game-3ds .text-slot-1 { left: 46px; top: 1023px; }
-body.game-3ds .text-slot-2 { left: 232px; top: 1023px; }
-body.game-3ds .text-slot-3 { left: 545px; top: 1023px; }
-body.game-3ds .text-slot-4 { left: 731px; top: 1023px; }
-body.game-3ds .text-slot-5 { left: 1042px; top: 1023px; }
-body.game-3ds .text-slot-6 { left: 1230px; top: 1023px; }
+body.game-3ds .text-slot-1 { left: 51px; top: 1022px; }
+body.game-3ds .text-slot-2 { left: 237px; top: 1022px; }
+body.game-3ds .text-slot-3 { left: 549px; top: 1022px; }
+body.game-3ds .text-slot-4 { left: 736px; top: 1022px; }
+body.game-3ds .text-slot-5 { left: 1047px; top: 1022px; }
+body.game-3ds .text-slot-6 { left: 1233px; top: 1022px; }
 
-body.game-switch .text-slot-1 { left: 46px; top: 1023px; }
-body.game-switch .text-slot-2 { left: 241px; top: 1023px; }
-body.game-switch .text-slot-3 { left: 570px; top: 1023px; }
-body.game-switch .text-slot-4 { left: 770px; top: 1023px; }
+body.game-switch .text-slot-1 { left: 52px; top: 1023px; }
+body.game-switch .text-slot-2 { left: 247px; top: 1023px; }
+body.game-switch .text-slot-3 { left: 574px; top: 1023px; }
+body.game-switch .text-slot-4 { left: 769px; top: 1023px; }
 body.game-switch .text-slot-5 { left: 1095px; top: 1023px; }
 body.game-switch .text-slot-6 { left: 1290px; top: 1023px; }
 
