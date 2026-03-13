@@ -1,0 +1,280 @@
+@font-face {
+  font-family: 'BebasCustom';
+  src: url('../fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --canvas-width: 1920px;
+  --canvas-height: 1080px;
+
+  --main-size: 162px;
+  --sub-size: 81px;
+
+  --egg-scale: 0.99;
+
+  --nick-width: 142px;
+  --nick-height: 23px;
+  --nick-font-size: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  overflow: hidden;
+  background: transparent;
+  font-family: 'BebasCustom', Arial, sans-serif;
+}
+
+body.game-3ds {
+  --main-size: 162px;
+  --sub-size: 81px;
+}
+
+body.game-switch {
+  --main-size: 172px;
+  --sub-size: 83px;
+}
+
+.overlay {
+  position: relative;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  background: transparent;
+}
+
+.team {
+  position: absolute;
+  inset: 0;
+}
+
+.slot {
+  position: absolute;
+  --portrait-size: var(--main-size);
+}
+
+.main-slot {
+  width: var(--main-size);
+  height: var(--main-size);
+  --portrait-size: var(--main-size);
+}
+
+.sub-slot {
+  width: var(--sub-size);
+  height: var(--sub-size);
+  --portrait-size: var(--sub-size);
+}
+
+.portrait {
+  width: var(--portrait-size);
+  height: var(--portrait-size);
+  object-fit: contain;
+  display: block;
+  image-rendering: auto;
+}
+
+.portrait.egg {
+  transform: scale(var(--egg-scale));
+  transform-origin: center center;
+}
+
+.portrait.dead {
+  filter: grayscale(100%);
+  opacity: 0.9;
+}
+
+.nick {
+  position: absolute;
+  left: 50%;
+  top: 166px;
+  transform: translateX(-50%);
+  width: var(--nick-width);
+  height: var(--nick-height);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+  font-family: 'BebasCustom', Arial, sans-serif;
+  font-size: var(--nick-font-size);
+  font-weight: normal;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.95),
+    0 0 2px rgba(0, 0, 0, 1);
+}
+
+/* =========================
+   POSICIONES 3DS
+========================= */
+
+body.game-3ds .slot-1 { left: 31px; top: 874px; }
+body.game-3ds .slot-2 { left: 217px; top: 874px; }
+body.game-3ds .slot-3 { left: 530px; top: 874px; }
+body.game-3ds .slot-4 { left: 716px; top: 874px; }
+body.game-3ds .slot-5 { left: 1028px; top: 874px; }
+body.game-3ds .slot-6 { left: 1214px; top: 874px; }
+
+body.game-3ds .slot-7 { left: 415px; top: 867px; }
+body.game-3ds .slot-8 { left: 415px; top: 969px; }
+body.game-3ds .slot-9 { left: 913px; top: 867px; }
+body.game-3ds .slot-10 { left: 913px; top: 969px; }
+
+/* =========================
+   POSICIONES SWITCH
+========================= */
+
+body.game-switch .slot-1 { left: 31px; top: 868px; }
+body.game-switch .slot-2 { left: 226px; top: 868px; }
+body.game-switch .slot-3 { left: 553px; top: 868px; }
+body.game-switch .slot-4 { left: 748px; top: 868px; }
+body.game-switch .slot-5 { left: 1074px; top: 868px; }
+body.game-switch .slot-6 { left: 1269px; top: 868px; }
+
+body.game-switch .slot-7 { left: 436px; top: 861px; }
+body.game-switch .slot-8 { left: 436px; top: 963px; }
+body.game-switch .slot-9 { left: 956px; top: 861px; }
+body.game-switch .slot-10 { left: 956px; top: 963px; }
+
+.death-box {
+  position: absolute;
+  top: var(--death-top);
+  right: var(--death-right);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 0 2px rgba(0, 0, 0, 1);
+}
+
+.death-label,
+.death-value {
+  font-size: var(--death-font-size);
+  line-height: 1;
+}
+
+.error-box {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  max-width: 900px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(120, 0, 0, 0.9);
+  color: white;
+  font-size: 24px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hidden {
+  display: none;
+}
+
+/* =========================
+   CAPA SOLO DE TEXTOS
+========================= */
+
+.text-only-body {
+  margin: 0;
+  padding: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.text-overlay {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  background: transparent;
+}
+
+.text-nick {
+  position: absolute;
+  width: 142px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: 'BebasCustom', Arial, sans-serif;
+  font-size: 25px;
+  font-weight: normal;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+
+  letter-spacing: 0.5px;
+
+  text-shadow:
+    -2px -2px 0 #000,
+     0px -2px 0 #000,
+     2px -2px 0 #000,
+    -2px  0px 0 #000,
+     2px  0px 0 #000,
+    -2px  2px 0 #000,
+     0px  2px 0 #000,
+     2px  2px 0 #000,
+     0px  3px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Posición de TEXTOS */
+body.game-3ds .text-slot-1 { left: 46px; top: 1023px; }
+body.game-3ds .text-slot-2 { left: 232px; top: 1023px; }
+body.game-3ds .text-slot-3 { left: 545px; top: 1023px; }
+body.game-3ds .text-slot-4 { left: 731px; top: 1023px; }
+body.game-3ds .text-slot-5 { left: 1042px; top: 1023px; }
+body.game-3ds .text-slot-6 { left: 1230px; top: 1023px; }
+
+body.game-switch .text-slot-1 { left: 46px; top: 1023px; }
+body.game-switch .text-slot-2 { left: 241px; top: 1023px; }
+body.game-switch .text-slot-3 { left: 570px; top: 1023px; }
+body.game-switch .text-slot-4 { left: 770px; top: 1023px; }
+body.game-switch .text-slot-5 { left: 1095px; top: 1023px; }
+body.game-switch .text-slot-6 { left: 1290px; top: 1023px; }
+
+/* Color DE TEXTOS: AJÚSTALAS SI HACE FALTA */
+.slot-1 .nick,
+.text-slot-1 { color: #ff7e70; }
+
+.slot-2 .nick,
+.text-slot-2 { color: #59be62; }
+
+.slot-3 .nick,
+.text-slot-3 { color: #76aadb; }
+
+.slot-4 .nick,
+.text-slot-4 { color: #ffdb00; }
+
+.slot-5 .nick,
+.text-slot-5 { color: #b494ee; }
+
+.slot-6 .nick,
+.text-slot-6 { color: #ff9900; }
+
+/* Oculta nombres en el widget principal */
+.slot .nick {
+  display: none;
+}
