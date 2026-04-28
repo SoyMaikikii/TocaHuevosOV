@@ -1,4 +1,17 @@
 const SLOT_COUNT = 10;
+const MAIN_SLOT_COUNT = 6;
+
+const OVERLAY_IMAGES = {
+  '3ds': {
+    eggs: './img/overlays/Huevos-3ds.png',
+    overlay: './img/overlays/Overlay-3ds.png',
+  },
+  switch: {
+    eggs: './img/overlays/Huevos-sw.png',
+    overlay: './img/overlays/Overlay-sw.png',
+  },
+};
+const DEFAULT_SWAP_COMMAND = 'cpoke';
 const DEFAULT_COMMAND_PREFIX = 'poke';
 const DEFAULT_DEATH_COMMAND = 'muertes';
 
@@ -205,6 +218,7 @@ let juego = '3ds';
 let canal = '';
 let commandPrefix = DEFAULT_COMMAND_PREFIX;
 let deathCommand = DEFAULT_DEATH_COMMAND;
+let swapCommand = DEFAULT_SWAP_COMMAND;
 
 let team = Array.from({ length: SLOT_COUNT }, () => null);
 let death = 0;
@@ -213,21 +227,24 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
   buildSlots();
+  buildTextSlots();
 
-	const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
 
-	canal = (params.get('canal') || '').trim().toLowerCase();
-	juego = (params.get('juego') || '3ds').trim().toLowerCase();
+  canal = (params.get('canal') || '').trim().toLowerCase();
+  juego = (params.get('juego') || '3ds').trim().toLowerCase();
 
-	if (!['3ds', 'switch'].includes(juego)) {
-	  juego = '3ds';
-	}
+  if (!['3ds', 'switch'].includes(juego)) {
+    juego = '3ds';
+  }
 
 	const comandoParam = (params.get('comando') || '').trim().toLowerCase();
 	const deathParam = (params.get('deathCommand') || '').trim().toLowerCase();
+	const swapParam = (params.get('swapCommand') || '').trim().toLowerCase();
 
-  if (comandoParam) commandPrefix = comandoParam;
-  if (deathParam) deathCommand = deathParam;
+	if (comandoParam) commandPrefix = comandoParam.replace(/^!/, '');
+	if (deathParam) deathCommand = deathParam.replace(/^!/, '');
+	if (swapParam) swapCommand = swapParam.replace(/^!/, '');
 
   if (!canal) {
     showError('Falta el parámetro ?canal=. Ejemplo: ?canal=maikikii');
@@ -235,6 +252,7 @@ function init() {
   }
 
   applyGameClass();
+  applyOverlayImages();
   loadState();
   renderAll();
   connectToChat();
@@ -243,6 +261,36 @@ function init() {
 function applyGameClass() {
   document.body.classList.remove('game-3ds', 'game-switch');
   document.body.classList.add(`game-${juego}`);
+}
+
+function applyOverlayImages() {
+  const assets = OVERLAY_IMAGES[juego] || OVERLAY_IMAGES['3ds'];
+
+  const eggsImage = document.getElementById('eggsImage');
+  const overlayImage = document.getElementById('overlayImage');
+
+  if (eggsImage) {
+    eggsImage.src = assets.eggs;
+  }
+
+  if (overlayImage) {
+    overlayImage.src = assets.overlay;
+  }
+}
+
+function buildTextSlots() {
+  const container = document.getElementById('textOverlay');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  for (let i = 0; i < MAIN_SLOT_COUNT; i++) {
+    const nick = document.createElement('div');
+    nick.id = `textNick${i + 1}`;
+    nick.className = `text-nick text-slot-${i + 1}`;
+    nick.textContent = EMPTY_LABEL;
+    container.appendChild(nick);
+  }
 }
 
 function buildSlots() {
@@ -297,6 +345,11 @@ function connectToChat() {
     if (normalizedCommand === deathCommand) {
       handleDeathCommand(message);
     }
+	
+	if (normalizedCommand === swapCommand) {
+	  await handleSwapCommand(message);
+	  return;
+	}
   };
 
   ComfyJS.Init(canal);
@@ -658,10 +711,108 @@ function buildPMDSpriteUrl(numero, emotion = 'Normal', flags = {}) {
   return `${PMD_BASE_URL}/${numero}/${emotion}.png`;
 }
 
+async function handleSwapCommand(message) {
+  const raw = (message || '').trim();
+
+  if (!raw) {
+    showError(`Uso: !${swapCommand} 1 7 [Nombre opcional]`);
+    return;
+  }
+
+  const parts = raw.split(/\s+/);
+
+  if (parts.length < 2) {
+    showError(`Uso: !${swapCommand} 1 7 [Nombre opcional]`);
+    return;
+  }
+
+  const indexA = parseSlotIndex(parts[0]);
+  const indexB = parseSlotIndex(parts[1]);
+  const customNick = parts.slice(2).join(' ').trim();
+
+  if (indexA === null || indexB === null) {
+    showError(`Los slots deben ser números del 1 al ${SLOT_COUNT}. Ejemplo: !${swapCommand} 1 7`);
+    return;
+  }
+
+  if (indexA === indexB) {
+    showError('No puedes intercambiar un slot consigo mismo. Eso es hacer ejercicio sin moverse.');
+    return;
+  }
+
+  const slotAIsVisible = indexA < MAIN_SLOT_COUNT;
+  const slotBIsVisible = indexB < MAIN_SLOT_COUNT;
+  const isVisibleBenchSwap = slotAIsVisible !== slotBIsVisible;
+
+  const temp = team[indexA];
+  team[indexA] = team[indexB];
+  team[indexB] = temp;
+
+  // Si se intercambia un slot visible con banca y escribiste un nombre,
+  // ese nombre se asigna al Pokémon que quedó en el slot visible.
+  if (isVisibleBenchSwap && customNick) {
+    const visibleIndex = slotAIsVisible ? indexA : indexB;
+
+    if (team[visibleIndex]) {
+      team[visibleIndex].nick = customNick;
+    }
+  }
+
+  // Recalcula los sprites según la NUEVA posición.
+  // Slot 1-6: Joyous > Happy > Normal
+  // Slot 7-10: Crying > Sad > Normal
+  // Si está muerto, mantiene sprite de DEAD_EMOTIONS.
+  await refreshSlotEmotionSprite(indexA);
+  await refreshSlotEmotionSprite(indexB);
+
+  saveState();
+  renderAll();
+}
+
+async function refreshSlotEmotionSprite(index) {
+  const slot = team[index];
+
+  if (!slot || !slot.numero) {
+    return;
+  }
+
+  const spriteFlags = {
+    shiny: !!slot.shiny,
+    mega: !!slot.mega,
+    region: slot.region || null,
+    specialForm: slot.specialForm || null,
+    formPath: slot.formPath || '',
+  };
+
+  const emotionSet = isBenchSlot(index) ? BENCH_EMOTIONS : ALIVE_EMOTIONS;
+
+  slot.spriteAlive = await resolvePortraitByPriority(slot.numero, emotionSet, spriteFlags);
+  slot.spriteDead = await resolvePortraitByPriority(slot.numero, DEAD_EMOTIONS, spriteFlags);
+
+  // Mantiene compatibilidad con partes viejas del código que usen "sprite".
+  slot.sprite = slot.spriteAlive;
+}
+
+function parseSlotIndex(value) {
+  const number = Number.parseInt(String(value || '').trim(), 10);
+
+  if (!Number.isInteger(number)) {
+    return null;
+  }
+
+  if (number < 1 || number > SLOT_COUNT) {
+    return null;
+  }
+
+  return number - 1;
+}
+
 function renderAll() {
   for (let i = 0; i < SLOT_COUNT; i++) {
     renderSlot(i);
   }
+
+  renderTextSlots();
   renderDeath();
 }
 
@@ -670,7 +821,10 @@ function renderSlot(index) {
   const img = document.getElementById(`pk${index + 1}`);
   const nick = document.getElementById(`nick${index + 1}`);
 
-  if (!img) return;
+  if (!img) {
+    renderTextSlot(index);
+    return;
+  }
 
   if (!slot) {
     img.src = EMPTY_IMAGE;
@@ -680,6 +834,8 @@ function renderSlot(index) {
     if (nick) {
       nick.textContent = EMPTY_LABEL;
     }
+
+    renderTextSlot(index);
     return;
   }
 
@@ -696,6 +852,24 @@ function renderSlot(index) {
   if (nick) {
     nick.textContent = slot.nick || '';
   }
+
+  renderTextSlot(index);
+}
+
+function renderTextSlots() {
+  for (let i = 0; i < MAIN_SLOT_COUNT; i++) {
+    renderTextSlot(i);
+  }
+}
+
+function renderTextSlot(index) {
+  if (index >= MAIN_SLOT_COUNT) return;
+
+  const textElement = document.getElementById(`textNick${index + 1}`);
+  if (!textElement) return;
+
+  const slot = team[index];
+  textElement.textContent = slot?.nick?.trim() || EMPTY_LABEL;
 }
 
 function renderDeath() {
