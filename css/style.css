@@ -340,3 +340,33 @@ body.game-switch .text-slot-6 { left: 1290px; top: 1023px; }
 .error-box {
   z-index: 99;
 }
+
+/* =========================
+   NOMBRE DEL STREAMER
+========================= */
+
+.streamer-name-layer {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Posición del nombre en overlay 3DS */
+body.game-3ds .streamer-name-layer {
+  left: 1398px;
+  top: 142px;
+}
+
+/* Posición del nombre en overlay Switch */
+body.game-switch .streamer-name-layer {
+  left: 1420px;
+  top: 142px;
+}
+
+/* Por seguridad, si no existe la imagen, se oculta */
+.hidden {
+  display: none !important;
+}
