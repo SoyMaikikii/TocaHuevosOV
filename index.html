@@ -2,18 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0" />
   <title>Overlay Tocada de Huevos - Maikikii</title>
-
   <link rel="stylesheet" href="./css/style.css" />
-
-  <script src="https://cdn.jsdelivr.net/npm/comfy.js@latest/dist/comfy.min.js"></script>
-  <script defer src="./js/main.js"></script>
 </head>
 <body>
-  <div id="overlay" class="overlay">
-    <div id="team" class="team"></div>
+  <div id="overlayRoot" class="overlay">
+
+    <!-- CAPA 1: imagen de huevos -->
+    <img id="eggsImage" class="overlay-layer eggs-layer" alt="" />
+
+    <!-- CAPA 2: sprites de Pokémon -->
+    <div id="pokemonLayer" class="pokemon-layer">
+      <div id="team" class="team"></div>
+    </div>
+
+    <!-- CAPA 3: overlay principal -->
+    <img id="overlayImage" class="overlay-layer main-overlay-layer" alt="" />
+
+    <!-- CAPA 4: nombres de los Pokémon -->
+    <div id="textOverlay" class="integrated-text-layer"></div>
+
+    <!-- Errores -->
     <div id="errorBox" class="error-box hidden"></div>
+
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/comfy.js@latest/dist/comfy.min.js"></script>
+  <script src="./js/main.js"></script>
 </body>
 </html>
