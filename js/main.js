@@ -1,6 +1,8 @@
 const SLOT_COUNT = 10;
 const MAIN_SLOT_COUNT = 6;
 
+const STREAMER_NAMES_PATH = './img/nombres/';
+
 const OVERLAY_IMAGES = {
   '3ds': {
     eggs: './img/overlays/Huevos-3ds.png',
@@ -251,11 +253,12 @@ function init() {
     return;
   }
 
-  applyGameClass();
-  applyOverlayImages();
-  loadState();
-  renderAll();
-  connectToChat();
+	applyGameClass();
+	applyOverlayImages();
+	applyStreamerNameImage();
+	loadState();
+	renderAll();
+	connectToChat();
 }
 
 function applyGameClass() {
@@ -276,6 +279,36 @@ function applyOverlayImages() {
   if (overlayImage) {
     overlayImage.src = assets.overlay;
   }
+}
+
+function applyStreamerNameImage() {
+  const streamerNameImage = document.getElementById('streamerNameImage');
+
+  if (!streamerNameImage) {
+    return;
+  }
+
+  const safeChannelName = (canal || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, '')
+    .replace(/[^a-z0-9_-]/g, '');
+
+  if (!safeChannelName) {
+    streamerNameImage.classList.add('hidden');
+    return;
+  }
+
+  streamerNameImage.onload = () => {
+    streamerNameImage.classList.remove('hidden');
+  };
+
+  streamerNameImage.onerror = () => {
+    streamerNameImage.removeAttribute('src');
+    streamerNameImage.classList.add('hidden');
+  };
+
+  streamerNameImage.src = `${STREAMER_NAMES_PATH}${safeChannelName}.png`;
 }
 
 function buildTextSlots() {
