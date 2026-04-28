@@ -278,3 +278,65 @@ body.game-switch .text-slot-6 { left: 1290px; top: 1023px; }
 .slot .nick {
   display: none;
 }
+
+/* =========================
+   OVERLAY COMPLETO EN UNA SOLA FUENTE
+   Orden de capas:
+   1. Huevos
+   2. Sprites
+   3. Overlay principal
+   4. Textos
+========================= */
+
+.overlay {
+  position: relative;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  background: transparent;
+  overflow: hidden;
+}
+
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.eggs-layer {
+  z-index: 10;
+}
+
+.pokemon-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.main-overlay-layer {
+  z-index: 30;
+}
+
+.integrated-text-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.team {
+  position: absolute;
+  inset: 0;
+}
+
+/* Oculta el egg.png del navegador para que se vea el huevo del PNG Huevos-3ds/Huevos-sw */
+.portrait.egg {
+  opacity: 0;
+}
+
+.error-box {
+  z-index: 99;
+}
